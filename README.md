@@ -1,5 +1,7 @@
 # AWK Log Parser
 
+![AWK Log Parser — home screen](docs/screenshot.png)
+
 **Live app:** [https://awk.developer-pro.com/](https://awk.developer-pro.com/)
 
 Parse Apache and Nginx access logs in the browser. No backend, no uploads, no tracking — all processing runs locally via Web Workers.
