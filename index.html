@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Parse Apache and Nginx access logs locally in your browser. No uploads, no tracking.">
+  <title>AWK Log Parser</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <a href="#/" class="logo" aria-label="AWK Log Parser home">AWK_LOG_PARSER</a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="#/" class="nav-link" data-route="/">Home</a>
+      <a href="#/workspace" class="nav-link" data-route="/workspace">Workspace</a>
+      <a href="#/analytics" class="nav-link" data-route="/analytics">Analysis</a>
+      <a href="#/docs" class="nav-link" data-route="/docs">Docs</a>
+    </nav>
+    <div class="header-actions">
+      <button type="button" class="icon-btn menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu">
+        <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg></span>
+      </button>
+    </div>
+  </header>
+
+  <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile">
+    <a href="#/" class="nav-link" data-route="/">Home</a>
+    <a href="#/workspace" class="nav-link" data-route="/workspace">Workspace</a>
+    <a href="#/analytics" class="nav-link" data-route="/analytics">Analysis</a>
+    <a href="#/docs" class="nav-link" data-route="/docs">Docs</a>
+  </nav>
+
+  <main class="app-main" id="app-main">
+    <!-- Home -->
+    <section id="view-home" class="view is-active" data-view="home" aria-label="Home">
+      <div class="hero">
+        <div class="hero-glow hero-glow--primary" aria-hidden="true"></div>
+        <div class="hero-glow hero-glow--secondary" aria-hidden="true"></div>
+        <h1>Parse Logs with the <span>Power of AWK</span></h1>
+        <p class="hero-lead">High-density log analysis for DevOps specialists. Transform messy streams into structured insights with millisecond latency, directly in your browser.</p>
+        <div class="hero-cta">
+          <button type="button" class="btn btn-primary" id="hero-upload-btn" data-go-workspace>
+            <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg></span>
+            Upload Log &amp; Start Parsing
+            <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8-8-8z"/></svg></span>
+          </button>
+          <div class="status-pill">
+            <span class="status-dot" aria-hidden="true"></span>
+            Parsing happens locally / securely
+          </div>
+        </div>
+        <div class="terminal" role="img" aria-label="Example terminal output">
+          <div class="terminal-bar">
+            <div class="terminal-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            <span class="terminal-title">awk_engine_v1.0.4 — session_4412.log</span>
+          </div>
+          <div class="terminal-body">
+            <div class="terminal-line"><span class="ln">1</span><code># Running: awk '{print $1, $4, $9}' access.log | head -n 5</code></div>
+            <div class="terminal-line"><span class="ln">2</span><code class="ok">192.168.1.1 [10/Oct/2023:13:55:36 200</code></div>
+            <div class="terminal-line"><span class="ln">3</span><code class="ok">192.168.1.4 [10/Oct/2023:13:55:38 404</code></div>
+            <div class="terminal-line"><span class="ln">4</span><code class="ok">10.0.0.122 [10/Oct/2023:13:56:01 200</code></div>
+            <div class="terminal-line"><span class="ln">5</span><code class="err">172.16.0.5 [10/Oct/2023:13:56:05 500</code></div>
+            <div class="terminal-line"><span class="ln">6</span><code class="cursor">_</code></div>
+          </div>
+        </div>
+      </div>
+
+      <section class="section section--dim">
+        <div class="section-inner feature-grid">
+          <article class="card">
+            <div class="card-icon card-icon--primary" aria-hidden="true">⚡</div>
+            <h3>Extreme Speed</h3>
+            <p>Web Worker parsing keeps the UI responsive on large access logs. Zero server round-trips for processing.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon card-icon--secondary" aria-hidden="true">📚</div>
+            <h3>Preset Library</h3>
+            <p>One-click presets for Apache, Nginx, WordPress admin-ajax, status codes, top IPs, URLs, and user agents.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon card-icon--tertiary" aria-hidden="true">👁</div>
+            <h3>Live Preview</h3>
+            <p>See parsed rows and summary stats update as soon as your file finishes processing in the browser.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-inner privacy-row">
+          <div>
+            <div class="privacy-badge"><span class="label-caps">Security first</span></div>
+            <h2>Your data never leaves your browser.</h2>
+            <p class="hero-lead" style="margin: 0 0 var(--space-lg); text-align: left;">Traditional log analyzers require uploading sensitive production logs to their servers. AWK_LOG_PARSER runs entirely client-side, ensuring compliance with strict privacy policies while providing high-performance tools.</p>
+            <ul class="privacy-list">
+              <li><span aria-hidden="true">✓</span> Local File API only</li>
+              <li><span aria-hidden="true">🔒</span> Zero-retention policy</li>
+              <li><span aria-hidden="true">&lt;/&gt;</span> Open source friendly</li>
+            </ul>
+          </div>
+          <div class="privacy-visual" aria-hidden="true">
+            <div class="privacy-visual-inner">CLIENT-SIDE ONLY</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section cta-band">
+        <div class="section-inner">
+          <h2>Ready to demystify your logs?</h2>
+          <div class="cta-actions">
+            <button type="button" class="btn btn-primary" data-go-workspace>Open Workspace</button>
+            <a href="#/docs" class="btn btn-secondary">Read Documentation</a>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- Workspace -->
+    <section id="view-workspace" class="view" data-view="workspace" aria-label="Workspace">
+      <div class="workspace-shell">
+        <aside class="workspace-sidebar" aria-label="Sidebar">
+          <div class="sidebar-brand">
+            <div class="sidebar-brand-icon" aria-hidden="true">📊</div>
+            <div>
+              <h2>Log Analysis</h2>
+              <p>v1.0.0-mvp</p>
+            </div>
+          </div>
+        </aside>
+        <div class="workspace-content">
+          <div class="workspace-inner">
+            <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload log file">
+              <input type="file" id="file-input" class="file-input-hidden" accept=".log,.txt,.gz,text/plain" aria-hidden="true">
+              <div class="dropzone-icon" aria-hidden="true">↑</div>
+              <h3>Select Log Source</h3>
+              <p>Drag and drop your <code>access_log</code> or <code>error_log</code> here. Plain text logs supported in this MVP.</p>
+              <div class="dropzone-actions">
+                <button type="button" class="btn btn-ghost" id="choose-file-btn">Choose file</button>
+                <button type="button" class="btn btn-sample" id="sample-log-btn">Load sample log</button>
+              </div>
+              <p class="file-meta" id="file-meta" hidden></p>
+            </div>
+
+            <div class="progress-wrap" id="progress-wrap" aria-live="polite" role="status">
+              <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+                <div class="progress-shimmer" aria-hidden="true"></div>
+              </div>
+              <div class="progress-meta">
+                <span class="progress-label" id="progress-label">Parsing… 0%</span>
+                <span class="progress-spinner" id="progress-spinner" aria-hidden="true"></span>
+              </div>
+            </div>
+
+            <div class="workspace-grid">
+              <div class="editor-panel">
+                <div class="editor-toolbar">
+                  <span>query.js — preset parser</span>
+                </div>
+                <div class="preset-select-wrap">
+                  <label for="preset-select">Active preset</label>
+                  <select id="preset-select" class="preset-select" aria-describedby="preset-hint"></select>
+                  <p id="preset-hint" class="sr-only">Choose how logs are filtered or aggregated</p>
+                </div>
+                <div class="code-preview-terminal terminal terminal--workspace" aria-label="AWK command and log preview">
+                  <div class="terminal-bar">
+                    <div class="terminal-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+                    <span class="terminal-title" id="terminal-title">query.awk — awaiting log</span>
+                  </div>
+                  <div class="terminal-body terminal-body--editor" id="code-preview-body">
+                    <div class="terminal-line terminal-line--cmd"><span class="ln">›</span><code class="cmd" id="awk-preview-cmd"># Select a preset or load a log file</code></div>
+                    <div class="terminal-divider" aria-hidden="true">— log tail —</div>
+                    <div id="log-preview-lines">
+                      <div class="terminal-line terminal-line--dim"><span class="ln">·</span><code class="dim">No lines loaded yet.</code></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="editor-footer">
+                  <button type="button" class="btn btn-primary" id="run-parse-btn" disabled>
+                    <span aria-hidden="true">▶</span> Run parse
+                  </button>
+                  <button type="button" class="btn btn-ghost" id="export-csv-btn" disabled>Export CSV</button>
+                </div>
+              </div>
+              <div>
+                <h4 class="label-caps" style="margin-bottom: var(--space-sm); color: var(--on-surface-variant);">Quick presets</h4>
+                <div class="preset-quick-list" id="preset-quick-list"></div>
+              </div>
+            </div>
+
+            <div class="summary-grid" id="summary-grid">
+              <div class="stat-card"><div class="label-caps">Total requests</div><div class="value" id="stat-total">—</div></div>
+              <div class="stat-card"><div class="label-caps">Unique IPs</div><div class="value value--secondary" id="stat-ips">—</div></div>
+              <div class="stat-card"><div class="label-caps">2xx / 3xx / 4xx / 5xx</div><div class="value" id="stat-status" style="font-size:1rem;">—</div></div>
+              <div class="stat-card"><div class="label-caps">Static / dynamic</div><div class="value value--tertiary" id="stat-static" style="font-size:1rem;">—</div></div>
+              <div class="stat-card"><div class="label-caps">Parse errors</div><div class="value value--error" id="stat-errors">—</div></div>
+            </div>
+
+            <div class="results-panel" id="results-panel">
+              <div class="results-header">
+                <div class="results-header__left">
+                  <h3 class="label-caps"><span class="live-dot" id="live-dot" aria-hidden="true"></span> STDOUT</h3>
+                  <span class="badge" id="row-count-badge">0 rows</span>
+                  <span class="badge badge--muted" id="exec-time-badge" hidden></span>
+                </div>
+                <button type="button" class="btn btn-ghost" id="export-csv-header" disabled>Export CSV</button>
+              </div>
+              <div class="table-scroll" id="table-scroll">
+                <div class="loading-overlay" id="table-loading" hidden aria-hidden="true">
+                  <div class="loading-overlay__inner">
+                    <div class="loading-ring" aria-hidden="true"></div>
+                    <span class="label-caps">Parsing log stream…</span>
+                  </div>
+                </div>
+                <table class="data-table" id="preview-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">#</th>
+                      <th scope="col">Remote</th>
+                      <th scope="col">Timestamp</th>
+                      <th scope="col">Method</th>
+                      <th scope="col">Request URI</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Bytes</th>
+                    </tr>
+                  </thead>
+                  <tbody id="preview-tbody"></tbody>
+                </table>
+                <div class="empty-panel" id="table-empty">
+                  <div class="empty-panel__icon" aria-hidden="true">⌘</div>
+                  <h4>No parsed rows yet</h4>
+                  <p>Upload an access log or load the bundled sample to run the parser in a Web Worker.</p>
+                  <button type="button" class="btn btn-primary" id="table-empty-sample">Load sample log</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Analytics -->
+    <section id="view-analytics" class="view" data-view="analytics" aria-label="Analytics">
+      <div class="docs-hero analytics-header">
+        <h1>History &amp; Analytics</h1>
+        <p class="hero-lead" style="text-align:left;margin:0;">Aggregates from your last parsed session. Data stays in memory until you refresh or parse a new file.</p>
+      </div>
+      <div class="section-inner analytics-grid" id="analytics-root">
+        <div class="empty-panel empty-panel--wide" id="analytics-empty">
+          <div class="empty-panel__icon" aria-hidden="true">▤</div>
+          <h4>No analytics yet</h4>
+          <p>Parse a log in the Workspace to generate top IPs, URLs, status distribution, and more.</p>
+          <a href="#/workspace" class="btn btn-primary">Open Workspace</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Docs -->
+    <section id="view-docs" class="view" data-view="docs" aria-label="Documentation">
+      <div class="docs-hero">
+        <h1>Presets &amp; Documentation</h1>
+        <div class="docs-notice">
+          <strong>MVP note:</strong> This build uses a JavaScript parser in a Web Worker for Apache/Nginx combined log format.
+          Sample AWK commands below are reference documentation; a WASM AWK engine can be integrated later for full script compatibility.
+        </div>
+      </div>
+      <div class="preset-docs-grid" id="preset-docs-grid"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="site-footer">
+    <div class="footer-grid">
+      <div>
+        <span class="logo">AWK_LOG_PARSER</span>
+        <p style="margin-top:var(--space-sm);font-family:var(--font-mono);font-size:12px;color:var(--on-surface-variant);max-width:16rem;">Built for engineers. The fastest way to parse logs in the browser.</p>
+      </div>
+      <div>
+        <span class="label-caps" style="color:var(--outline);display:block;margin-bottom:var(--space-md);">Project</span>
+        <ul class="privacy-list" style="color:var(--on-surface-variant);font-family:var(--font-sans);font-size:14px;">
+          <li><a href="#/docs">Presets</a></li>
+          <li><a href="#/workspace">Workspace</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-meta">
+      <span>© 2026 AWK Log Parser</span>
+      <span>GDPR-friendly · No tracking</span>
+    </div>
+  </footer>
+
+  <script src="assets/js/presets.js"></script>
+  <script src="assets/js/sample-log.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

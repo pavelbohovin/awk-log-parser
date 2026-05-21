@@ -1,0 +1,11 @@
+[
+  {
+    "key": "cmd+l",
+    "command": "-editor.action.addSelectionToNextFindMatch"
+  },
+  {
+    "key": "cmd+l",
+    "command": "workbench.action.gotoLine"
+  }
+]
+

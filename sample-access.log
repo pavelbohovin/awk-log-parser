@@ -1,0 +1,6 @@
+192.168.1.1 - - [10/Oct/2023:13:55:36 +0000] "GET /index.html HTTP/1.1" 200 1234 "-" "Mozilla/5.0"
+192.168.1.4 - - [10/Oct/2023:13:55:38 +0000] "GET /missing HTTP/1.1" 404 512 "-" "Mozilla/5.0"
+10.0.0.122 - - [10/Oct/2023:13:56:01 +0000] "POST /api/v1/data HTTP/1.1" 200 89 "https://example.com" "curl/7.68.0"
+172.16.0.5 - - [10/Oct/2023:13:56:05 +0000] "GET /wp-admin/admin-ajax.php HTTP/1.1" 500 0 "-" "WordPress/6.0"
+malformed line without proper format
+192.168.1.1 - - [10/Oct/2023:13:57:00 +0000] "GET /style.css HTTP/1.1" 200 4096 "-" "Mozilla/5.0"
