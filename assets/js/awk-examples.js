@@ -1,6 +1,6 @@
 /**
  * Example AWK scripts for the WASM engine (combined Apache/Nginx field layout).
- * Field numbers assume space-separated log lines; quoted requests may need FS tweaks.
+ * Field numbers match Apache combined logs: $7 URL, $9 status.
  */
 (function (global) {
   'use strict';
@@ -13,6 +13,7 @@
     '  count[status]++',
     '}',
     'END {',
+    '  print "status,count"',
     '  for (s in count) {',
     '    print s "," count[s]',
     '  }',
@@ -64,15 +65,10 @@
     },
     {
       id: 'errors-only',
-      name: '4xx / 5xx only',
+      name: 'Only errors',
       script: [
-        '{',
-        '  status = $9 + 0',
-        '  if (status >= 400) count[status]++',
-        '}',
-        'END {',
-        '  print "status,count"',
-        '  for (s in count) print s "," count[s]',
+        '$9 ~ /^[45][0-9][0-9]$/ {',
+        '  print',
         '}',
       ].join('\n'),
     },

@@ -27,6 +27,8 @@
     wasmAvailable: false,
     wasmMode: 'none',
     wasmError: null,
+    wasmSelfTest: null,
+    wasmStatusMessage: 'AWK WASM has not loaded yet.',
   };
 
   var els = {};
@@ -103,6 +105,16 @@
       state.wasmAvailable = !!msg.available;
       state.wasmMode = msg.mode || 'none';
       state.wasmError = msg.error || null;
+      state.wasmSelfTest = msg.selfTest || null;
+      state.wasmStatusMessage = state.wasmAvailable
+        ? 'AWK WASM Engine: Available'
+        : 'AWK WASM Engine: Failed';
+      updateWasmStatus();
+      return;
+    }
+    if (msg.type === 'awk-status') {
+      state.wasmStatusMessage = msg.message || state.wasmStatusMessage;
+      if (msg.stderr) console.warn('AWK STDERR:', msg.stderr);
       updateWasmStatus();
       return;
     }
@@ -110,6 +122,9 @@
       state.awkRunning = false;
       setAwkLoading(false);
       state.lastAwkResult = msg.result;
+      if (msg.result && !msg.result.ok) {
+        state.wasmError = msg.result.stderr || 'AWK execution failed.';
+      }
       renderAwkResult(msg.result);
       return;
     }
@@ -177,13 +192,28 @@
     var el = $('wasm-status');
     if (!el) return;
     el.classList.remove('is-ok', 'is-warn', 'is-err');
+    var selfTestText = 'Last WASM self-test result: not run';
+    if (state.wasmSelfTest) {
+      selfTestText =
+        'Last WASM self-test result: ' +
+        (state.wasmSelfTest.ok ? 'awk-wasm-ok' : 'failed') +
+        ' (exit ' +
+        (state.wasmSelfTest.exitCode != null ? state.wasmSelfTest.exitCode : 1) +
+        ')';
+    }
     if (!state.wasmAvailable) {
-      el.classList.add('is-warn');
+      el.classList.add(state.wasmError ? 'is-err' : 'is-warn');
       var msg =
         state.wasmError ||
-        'AWK WASM not loaded. Ensure assets/wasm/awk.js and awk.wasm are deployed (see assets/wasm/README.md).';
+        'AWK WASM files found but failed to load.';
       el.innerHTML =
+        '<strong>Engine Status</strong><br>' +
+        'JavaScript Parser: Available<br>' +
+        'AWK WASM Engine: Failed<br>' +
+        escapeHtml(selfTestText) +
+        '<br>' +
         escapeHtml(msg) +
+        '<br>Falling back to JavaScript parser.' +
         ' <button type="button" class="wasm-status__btn" id="use-js-parser-btn">Use JavaScript Parser</button>';
       var useJs = $('use-js-parser-btn');
       if (useJs && !useJs.dataset.bound) {
@@ -195,10 +225,15 @@
       }
       return;
     }
-    el.textContent =
-      'AWK WASM ready (' +
-      state.wasmMode +
-      '). Scripts run in a Web Worker; logs never leave this device.';
+    el.innerHTML =
+      '<strong>Engine Status</strong><br>' +
+      'JavaScript Parser: Available<br>' +
+      'AWK WASM Engine: Available (' +
+      escapeHtml(state.wasmMode) +
+      ')<br>' +
+      escapeHtml(selfTestText) +
+      '<br>' +
+      escapeHtml(state.wasmStatusMessage || 'AWK WASM loaded.');
     el.classList.add('is-ok');
   }
 
@@ -336,11 +371,11 @@
   function showWasmUnavailableInline() {
     var msg =
       state.wasmError ||
-      'AWK WASM files not found on this server. Add assets/wasm/awk.js and assets/wasm/awk.wasm (see Docs → Building AWK WASM).';
+      'AWK WASM files found but failed to load.';
     renderAwkResult({
       ok: false,
       stdout: '',
-      stderr: msg,
+      stderr: msg + '\nFalling back to JavaScript parser.',
       exitCode: 1,
     });
     updateWasmStatus();

@@ -218,8 +218,18 @@ importScripts('presets.js', 'awk-examples.js', 'awk-wasm.js');
     var script = data.script || '';
     var inputText = data.inputText || '';
 
+    self.postMessage({
+      type: 'awk-status',
+      message: 'AWK run started',
+    });
+
     AwkWasm.run(script, inputText)
       .then(function (result) {
+        self.postMessage({
+          type: 'awk-status',
+          message: result.ok ? 'AWK run finished' : 'AWK execution failed.',
+          stderr: result.stderr || '',
+        });
         self.postMessage({
           type: 'awk-result',
           result: result,
@@ -239,12 +249,17 @@ importScripts('presets.js', 'awk-examples.js', 'awk-wasm.js');
   }
 
   function handleAwkProbe() {
+    self.postMessage({
+      type: 'awk-status',
+      message: 'AWK WASM loading started',
+    });
     AwkWasm.load().then(function (ok) {
       self.postMessage({
         type: 'awk-probe-result',
         available: ok && AwkWasm.isLoaded(),
         mode: AwkWasm.getMode(),
         error: AwkWasm.getLastError(),
+        selfTest: AwkWasm.getLastSelfTest(),
         supported: AwkWasm.isSupported(),
       });
     });
