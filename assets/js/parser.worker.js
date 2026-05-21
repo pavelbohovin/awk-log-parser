@@ -1,8 +1,8 @@
 /* eslint-disable no-restricted-globals */
 /**
- * Log parser Web Worker — all processing stays in the browser.
+ * Log parser + AWK WASM Web Worker — all processing stays in the browser.
  */
-importScripts('presets.js');
+importScripts('presets.js', 'awk-examples.js', 'awk-wasm.js');
 
 (function () {
   'use strict';
@@ -193,7 +193,6 @@ importScripts('presets.js');
 
     if (preset.mode === 'aggregate' && preset.aggregate) {
       var aggField = preset.aggregate;
-      if (aggField === 'status') aggField = 'status';
       analytics.presetAggregate = countBy(filtered, aggField, 25);
     }
 
@@ -215,8 +214,55 @@ importScripts('presets.js');
     };
   }
 
+  function handleRunAwk(data) {
+    var script = data.script || '';
+    var inputText = data.inputText || '';
+
+    AwkWasm.run(script, inputText)
+      .then(function (result) {
+        self.postMessage({
+          type: 'awk-result',
+          result: result,
+        });
+      })
+      .catch(function (err) {
+        self.postMessage({
+          type: 'awk-result',
+          result: {
+            ok: false,
+            stdout: '',
+            stderr: err && err.message ? err.message : 'AWK run failed',
+            exitCode: 1,
+          },
+        });
+      });
+  }
+
+  function handleAwkProbe() {
+    AwkWasm.load().then(function (ok) {
+      self.postMessage({
+        type: 'awk-probe-result',
+        available: ok && AwkWasm.isLoaded(),
+        mode: AwkWasm.getMode(),
+        error: AwkWasm.getLastError(),
+        supported: AwkWasm.isSupported(),
+      });
+    });
+  }
+
   self.onmessage = function (ev) {
     var data = ev.data || {};
+
+    if (data.type === 'run-awk') {
+      handleRunAwk(data);
+      return;
+    }
+
+    if (data.type === 'awk-probe') {
+      handleAwkProbe();
+      return;
+    }
+
     if (data.type !== 'parse') return;
 
     try {

@@ -151,8 +151,20 @@
               </div>
             </div>
 
+            <div class="engine-bar">
+              <div class="engine-bar__row">
+                <label for="engine-select" class="label-caps">Engine</label>
+                <select id="engine-select" class="preset-select engine-select" aria-describedby="engine-privacy">
+                  <option value="js">JavaScript Parser</option>
+                  <option value="wasm">AWK WASM Engine</option>
+                </select>
+              </div>
+              <p id="engine-privacy" class="engine-privacy">All AWK execution runs locally in your browser. Logs are not uploaded.</p>
+              <p id="wasm-status" class="wasm-status" role="status" aria-live="polite"></p>
+            </div>
+
             <div class="workspace-grid">
-              <div class="editor-panel">
+              <div class="editor-panel" id="panel-js-engine">
                 <div class="editor-toolbar">
                   <span>query.js — preset parser</span>
                 </div>
@@ -164,7 +176,7 @@
                 <div class="code-preview-terminal terminal terminal--workspace" aria-label="AWK command and log preview">
                   <div class="terminal-bar">
                     <div class="terminal-dots" aria-hidden="true"><span></span><span></span><span></span></div>
-                    <span class="terminal-title" id="terminal-title">query.awk — awaiting log</span>
+                    <span class="terminal-title" id="terminal-title">query.js — awaiting log</span>
                   </div>
                   <div class="terminal-body terminal-body--editor" id="code-preview-body">
                     <div class="terminal-line terminal-line--cmd"><span class="ln">›</span><code class="cmd" id="awk-preview-cmd"># Select a preset or load a log file</code></div>
@@ -181,9 +193,35 @@
                   <button type="button" class="btn btn-ghost" id="export-csv-btn" disabled>Export CSV</button>
                 </div>
               </div>
-              <div>
-                <h4 class="label-caps" style="margin-bottom: var(--space-sm); color: var(--on-surface-variant);">Quick presets</h4>
-                <div class="preset-quick-list" id="preset-quick-list"></div>
+
+              <div class="editor-panel editor-panel--awk" id="panel-wasm-engine" hidden>
+                <div class="editor-toolbar">
+                  <span>script.awk — WASM engine</span>
+                </div>
+                <div class="awk-editor-wrap">
+                  <label for="awk-script-editor" class="label-caps">AWK script</label>
+                  <textarea id="awk-script-editor" class="awk-script-editor" spellcheck="false" rows="12" aria-describedby="awk-editor-hint"></textarea>
+                  <p id="awk-editor-hint" class="awk-editor-hint">Runs via WebAssembly in a Web Worker. Requires <code>assets/wasm/awk.js</code> + <code>awk.wasm</code> from an Emscripten build.</p>
+                </div>
+                <div class="editor-footer editor-footer--awk">
+                  <button type="button" class="btn btn-primary" id="run-awk-btn" disabled>
+                    <span aria-hidden="true">▶</span> Run AWK
+                  </button>
+                  <button type="button" class="btn btn-ghost" id="reset-awk-btn">Reset script</button>
+                  <div class="example-picker">
+                    <label for="awk-example-select" class="sr-only">Load example script</label>
+                    <select id="awk-example-select" class="preset-select">
+                      <option value="">Load example script…</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="workspace-side-col">
+                <div id="side-js-presets">
+                  <h4 class="label-caps side-heading">Quick presets</h4>
+                  <div class="preset-quick-list" id="preset-quick-list"></div>
+                </div>
               </div>
             </div>
 
@@ -193,6 +231,29 @@
               <div class="stat-card"><div class="label-caps">2xx / 3xx / 4xx / 5xx</div><div class="value" id="stat-status" style="font-size:1rem;">—</div></div>
               <div class="stat-card"><div class="label-caps">Static / dynamic</div><div class="value value--tertiary" id="stat-static" style="font-size:1rem;">—</div></div>
               <div class="stat-card"><div class="label-caps">Parse errors</div><div class="value value--error" id="stat-errors">—</div></div>
+            </div>
+
+            <div class="results-panel results-panel--awk" id="awk-output-panel" hidden>
+              <div class="results-header">
+                <div class="results-header__left">
+                  <h3 class="label-caps"><span class="live-dot" id="awk-live-dot" aria-hidden="true"></span> AWK STDOUT</h3>
+                  <span class="badge" id="awk-exit-badge">—</span>
+                </div>
+              </div>
+              <div class="awk-stderr-panel" id="awk-stderr-panel" hidden>
+                <h4 class="label-caps">STDERR</h4>
+                <pre class="awk-stdout-pre awk-stderr-pre" id="awk-stderr-pre"></pre>
+              </div>
+              <pre class="awk-stdout-pre" id="awk-stdout-pre" aria-label="AWK standard output">(no output yet)</pre>
+              <div class="awk-csv-section" id="awk-csv-section" hidden>
+                <h4 class="label-caps awk-csv-heading">Parsed CSV output</h4>
+                <div class="table-scroll table-scroll--awk">
+                  <table class="data-table" id="awk-csv-table">
+                    <thead id="awk-csv-thead"></thead>
+                    <tbody id="awk-csv-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
             </div>
 
             <div class="results-panel" id="results-panel">
@@ -208,7 +269,7 @@
                 <div class="loading-overlay" id="table-loading" hidden aria-hidden="true">
                   <div class="loading-overlay__inner">
                     <div class="loading-ring" aria-hidden="true"></div>
-                    <span class="label-caps">Parsing log stream…</span>
+                    <span class="label-caps" id="loading-label">Parsing log stream…</span>
                   </div>
                 </div>
                 <table class="data-table" id="preview-table">
@@ -259,10 +320,23 @@
       <div class="docs-hero">
         <h1>Presets &amp; Documentation</h1>
         <div class="docs-notice">
-          <strong>MVP note:</strong> This build uses a JavaScript parser in a Web Worker for Apache/Nginx combined log format.
-          Sample AWK commands below are reference documentation; a WASM AWK engine can be integrated later for full script compatibility.
+          <strong>Engines:</strong> The <em>JavaScript parser</em> handles combined Apache/Nginx logs without WASM.
+          The <em>AWK WASM engine</em> runs real AWK scripts in a Web Worker when you provide compiled
+          <code>assets/wasm/awk.js</code> and <code>awk.wasm</code> (see below).
         </div>
       </div>
+      <section class="docs-wasm-build section-inner" style="max-width:80rem;margin:0 auto var(--space-xl);padding:0 var(--margin-mobile)">
+        <h2 class="label-caps" style="color:var(--primary);margin-bottom:var(--space-md)">Building AWK WASM (Emscripten)</h2>
+        <div class="preset-doc-card">
+          <p>To enable the AWK WASM engine, compile an AWK implementation such as <strong>One True Awk</strong>, <strong>mawk</strong>, or <strong>BusyBox awk</strong> with Emscripten and copy the output here:</p>
+          <pre>assets/wasm/awk.js
+assets/wasm/awk.wasm</pre>
+          <p style="margin-top:var(--space-md)">The app expects an Emscripten-style module with a virtual filesystem so it can write <code>/input.log</code>, <code>/script.awk</code>, and run:</p>
+          <pre>awk -f /script.awk /input.log</pre>
+          <p style="margin-top:var(--space-md)">Suggested flags include <code>-s FORCE_FILESYSTEM=1</code>, <code>-s EXPORTED_RUNTIME_METHODS=['FS','callMain']</code>, and <code>-s NO_EXIT_RUNTIME=1</code>. Full notes: <code>assets/wasm/README.md</code>.</p>
+          <p style="margin-top:var(--space-md);color:var(--on-surface-variant)">If WASM files are missing, the UI falls back to the JavaScript parser and shows a clear status message.</p>
+        </div>
+      </section>
       <div class="preset-docs-grid" id="preset-docs-grid"></div>
     </section>
   </main>
@@ -288,6 +362,7 @@
   </footer>
 
   <script src="assets/js/presets.js"></script>
+  <script src="assets/js/awk-examples.js"></script>
   <script src="assets/js/sample-log.js"></script>
   <script src="assets/js/app.js"></script>
 </body>

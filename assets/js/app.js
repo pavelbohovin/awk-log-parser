@@ -11,13 +11,22 @@
     '/analytics': 'analytics',
   };
 
+  var DEFAULT_AWK_SCRIPT =
+    typeof AwkExamples !== 'undefined' ? AwkExamples.DEFAULT_SCRIPT : '';
+
   var state = {
     fileName: null,
     fileContent: null,
     presetId: AwkPresets.defaultId,
+    engine: 'js',
     parsing: false,
+    awkRunning: false,
     lastResult: null,
+    lastAwkResult: null,
     worker: null,
+    wasmAvailable: false,
+    wasmMode: 'none',
+    wasmError: null,
   };
 
   var els = {};
@@ -90,6 +99,20 @@
 
   function onWorkerMessage(ev) {
     var msg = ev.data || {};
+    if (msg.type === 'awk-probe-result') {
+      state.wasmAvailable = !!msg.available;
+      state.wasmMode = msg.mode || 'none';
+      state.wasmError = msg.error || null;
+      updateWasmStatus();
+      return;
+    }
+    if (msg.type === 'awk-result') {
+      state.awkRunning = false;
+      setAwkLoading(false);
+      state.lastAwkResult = msg.result;
+      renderAwkResult(msg.result);
+      return;
+    }
     if (msg.type === 'progress') {
       setProgress(msg.percent, msg.linesProcessed, msg.totalLines);
       return;
@@ -136,9 +159,235 @@
     var panel = $('results-panel');
     var loading = $('table-loading');
     var dot = $('live-dot');
+    var label = $('loading-label');
     if (panel) panel.classList.toggle('is-loading', active);
     if (loading) loading.hidden = !active;
+    if (label) label.textContent = 'Parsing log stream…';
     if (dot) dot.classList.toggle('is-live', active || !!(state.lastResult && state.lastResult.previewTotal));
+  }
+
+  function setAwkLoading(active) {
+    var panel = $('awk-output-panel');
+    var dot = $('awk-live-dot');
+    if (panel) panel.classList.toggle('is-loading', active);
+    if (dot) dot.classList.toggle('is-live', active);
+  }
+
+  function updateWasmStatus() {
+    var el = $('wasm-status');
+    if (!el) return;
+    el.classList.remove('is-ok', 'is-warn', 'is-err');
+    if (!state.wasmAvailable) {
+      el.classList.add('is-warn');
+      var msg =
+        state.wasmError ||
+        'AWK WASM not loaded. Deploy assets/wasm/awk.js and awk.wasm (Emscripten build).';
+      el.innerHTML =
+        escapeHtml(msg) +
+        ' <a href="#/docs" class="wasm-status__link">Build instructions</a> · ' +
+        '<button type="button" class="wasm-status__btn" id="use-js-parser-btn">Use JavaScript Parser</button>';
+      var useJs = $('use-js-parser-btn');
+      if (useJs && !useJs.dataset.bound) {
+        useJs.dataset.bound = '1';
+        useJs.addEventListener('click', function () {
+          setEngine('js');
+          if (state.fileContent) runParse();
+        });
+      }
+      return;
+    }
+    el.textContent =
+      'AWK WASM ready (' +
+      state.wasmMode +
+      '). Scripts run in a Web Worker; logs never leave this device.';
+    el.classList.add('is-ok');
+  }
+
+  function setEngine(engine) {
+    state.engine = engine === 'wasm' ? 'wasm' : 'js';
+    var sel = $('engine-select');
+    if (sel) sel.value = state.engine;
+
+    var jsPanel = $('panel-js-engine');
+    var wasmPanel = $('panel-wasm-engine');
+    var jsResults = $('results-panel');
+    var awkResults = $('awk-output-panel');
+    var jsSide = $('side-js-presets');
+    var summary = $('summary-grid');
+    var progress = $('progress-wrap');
+
+    if (jsPanel) jsPanel.hidden = state.engine !== 'js';
+    if (wasmPanel) wasmPanel.hidden = state.engine !== 'wasm';
+    if (jsResults) jsResults.hidden = state.engine !== 'js';
+    if (awkResults) awkResults.hidden = state.engine !== 'wasm';
+    if (jsSide) jsSide.hidden = state.engine !== 'js';
+    if (summary) summary.hidden = state.engine === 'wasm';
+
+    var grid = document.querySelector('.workspace-grid');
+    if (grid) {
+      grid.classList.toggle('workspace-grid--js', state.engine === 'js');
+      grid.classList.toggle('workspace-grid--wasm', state.engine === 'wasm');
+    }
+    if (progress && state.engine === 'wasm' && !state.parsing) {
+      progress.classList.remove('is-visible');
+    }
+
+    if (state.engine === 'wasm' && !state.wasmAvailable) {
+      updateWasmStatus();
+    }
+
+    syncEngineButtons();
+  }
+
+  function syncEngineButtons() {
+    var hasLog = !!state.fileContent;
+    var runParse = $('run-parse-btn');
+    var runAwk = $('run-awk-btn');
+    if (runParse) runParse.disabled = !hasLog || state.parsing || state.engine !== 'js';
+    if (runAwk) {
+      runAwk.disabled =
+        !hasLog || state.awkRunning || state.engine !== 'wasm' || !state.wasmAvailable;
+      runAwk.title = !state.wasmAvailable
+        ? 'Add assets/wasm/awk.js and awk.wasm to enable AWK (see Docs)'
+        : '';
+    }
+  }
+
+  function probeWasm() {
+    var worker = initWorker();
+    if (worker) worker.postMessage({ type: 'awk-probe' });
+  }
+
+  function parseCsvStdout(stdout) {
+    var lines = (stdout || '').split(/\r?\n/).filter(function (l) {
+      return l.trim().length > 0;
+    });
+    if (lines.length < 2) return null;
+
+    var rows = [];
+    for (var i = 0; i < lines.length; i++) {
+      var parts = lines[i].split(',');
+      if (parts.length < 2) return null;
+      rows.push(parts.map(function (c) {
+        return c.trim();
+      }));
+    }
+
+    var cols = rows[0].length;
+    for (var j = 1; j < rows.length; j++) {
+      if (rows[j].length !== cols) return null;
+    }
+
+    return { headers: rows[0], rows: rows.slice(1) };
+  }
+
+  function renderAwkResult(result) {
+    result = result || { ok: false, stdout: '', stderr: '', exitCode: 1 };
+    var stdoutPre = $('awk-stdout-pre');
+    var stderrPanel = $('awk-stderr-panel');
+    var stderrPre = $('awk-stderr-pre');
+    var exitBadge = $('awk-exit-badge');
+    var csvSection = $('awk-csv-section');
+    var thead = $('awk-csv-thead');
+    var tbody = $('awk-csv-tbody');
+
+    if (stdoutPre) {
+      stdoutPre.textContent = result.stdout && result.stdout.trim() ? result.stdout : '(empty)';
+    }
+    if (stderrPanel && stderrPre) {
+      var hasErr = !!(result.stderr && result.stderr.trim());
+      stderrPanel.hidden = !hasErr;
+      stderrPre.textContent = result.stderr || '';
+    }
+    if (exitBadge) {
+      exitBadge.textContent = result.ok ? 'exit 0' : 'exit ' + (result.exitCode != null ? result.exitCode : 1);
+      exitBadge.style.color = result.ok ? 'var(--secondary)' : 'var(--error)';
+    }
+
+    var csv = result.ok ? parseCsvStdout(result.stdout) : null;
+    if (csvSection && thead && tbody) {
+      if (csv && csv.rows.length) {
+        csvSection.hidden = false;
+        thead.innerHTML =
+          '<tr>' +
+          csv.headers
+            .map(function (h) {
+              return '<th scope="col">' + escapeHtml(h) + '</th>';
+            })
+            .join('') +
+          '</tr>';
+        var html = '';
+        for (var i = 0; i < Math.min(csv.rows.length, 500); i++) {
+          html += '<tr>';
+          for (var c = 0; c < csv.rows[i].length; c++) {
+            html += '<td>' + escapeHtml(csv.rows[i][c]) + '</td>';
+          }
+          html += '</tr>';
+        }
+        tbody.innerHTML = html;
+      } else {
+        csvSection.hidden = true;
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
+      }
+    }
+
+  }
+
+  function showWasmUnavailableInline() {
+    var msg =
+      state.wasmError ||
+      'AWK WASM files not found on this server. Add assets/wasm/awk.js and assets/wasm/awk.wasm (see Docs → Building AWK WASM).';
+    renderAwkResult({
+      ok: false,
+      stdout: '',
+      stderr: msg,
+      exitCode: 1,
+    });
+    updateWasmStatus();
+  }
+
+  function runAwk() {
+    if (!state.fileContent || state.awkRunning) return;
+
+    if (!state.wasmAvailable) {
+      showWasmUnavailableInline();
+      return;
+    }
+
+    var editor = $('awk-script-editor');
+    var script = editor ? editor.value : DEFAULT_AWK_SCRIPT;
+    var worker = initWorker();
+    if (!worker) {
+      alert('Web Workers are not available.');
+      return;
+    }
+
+    state.awkRunning = true;
+    setAwkLoading(true);
+    var stdoutPre = $('awk-stdout-pre');
+    if (stdoutPre) stdoutPre.textContent = 'Running AWK in Web Worker…';
+
+    worker.postMessage({
+      type: 'run-awk',
+      script: script,
+      inputText: state.fileContent,
+    });
+  }
+
+  function resetAwkScript() {
+    var editor = $('awk-script-editor');
+    if (editor) editor.value = DEFAULT_AWK_SCRIPT;
+  }
+
+  function buildAwkExampleSelect() {
+    var sel = $('awk-example-select');
+    if (!sel || typeof AwkExamples === 'undefined') return;
+    var html = '<option value="">Load example script…</option>';
+    AwkExamples.EXAMPLES.forEach(function (ex) {
+      html += '<option value="' + escapeHtml(ex.id) + '">' + escapeHtml(ex.name) + '</option>';
+    });
+    sel.innerHTML = html;
   }
 
   function setTableEmptyVisible(show) {
@@ -218,10 +467,9 @@
     if (dropzone) dropzone.classList.add('has-file');
     updateCodePreview();
     enableExport(false);
-    var run = $('run-parse-btn');
-    if (run) run.disabled = false;
+    syncEngineButtons();
     navigate('/workspace');
-    runParse();
+    if (state.engine === 'js') runParse();
   }
 
   function ingestContent(name, content, isSample) {
@@ -241,8 +489,7 @@
     if (dropzone) dropzone.classList.add('has-file');
     updateCodePreview();
     enableExport(false);
-    var run = $('run-parse-btn');
-    if (run) run.disabled = false;
+    syncEngineButtons();
   }
 
   function runParse() {
@@ -523,8 +770,7 @@
       var b = $(id);
       if (b) b.disabled = !on;
     });
-    var run = $('run-parse-btn');
-    if (run) run.disabled = !state.fileContent || state.parsing;
+    syncEngineButtons();
   }
 
   function exportCsv() {
@@ -557,7 +803,7 @@
     reader.onload = function () {
       ingestContent(file.name, reader.result, false);
       navigate('/workspace');
-      runParse();
+      if (state.engine === 'js') runParse();
     };
     reader.onerror = function () {
       alert('Could not read file.');
@@ -649,6 +895,36 @@
     $('export-csv-btn').addEventListener('click', exportCsv);
     $('export-csv-header').addEventListener('click', exportCsv);
 
+    var engineSelect = $('engine-select');
+    if (engineSelect) {
+      engineSelect.addEventListener('change', function () {
+        setEngine(this.value);
+        if (this.value === 'wasm' && !state.wasmAvailable) {
+          probeWasm();
+        }
+      });
+    }
+
+    var runAwkBtn = $('run-awk-btn');
+    if (runAwkBtn) runAwkBtn.addEventListener('click', runAwk);
+
+    var resetAwkBtn = $('reset-awk-btn');
+    if (resetAwkBtn) resetAwkBtn.addEventListener('click', resetAwkScript);
+
+    var awkExampleSel = $('awk-example-select');
+    if (awkExampleSel) {
+      awkExampleSel.addEventListener('change', function () {
+        var id = this.value;
+        if (!id || typeof AwkExamples === 'undefined') return;
+        var ex = AwkExamples.getById(id);
+        if (ex) {
+          var editor = $('awk-script-editor');
+          if (editor) editor.value = ex.script;
+        }
+        this.value = '';
+      });
+    }
+
     var sampleBtn = $('sample-log-btn');
     if (sampleBtn) {
       sampleBtn.addEventListener('click', function (e) {
@@ -672,18 +948,74 @@
 
   function init() {
     buildPresetUI();
+    buildAwkExampleSelect();
+    var editor = $('awk-script-editor');
+    if (editor) editor.value = DEFAULT_AWK_SCRIPT;
     bindEvents();
     if (!location.hash || location.hash === '#') {
       navigate('/', true);
     } else {
       renderRoute(formatRoute(location.hash));
     }
+    setEngine('js');
     enableExport(false);
     setTableEmptyVisible(true);
     setParsingUI(false);
+    setAwkLoading(false);
     updateCodePreview();
     renderDocs();
+    probeWasm();
   }
+
+  /**
+   * Public API — AWK runs in parser.worker.js; these methods delegate to the worker.
+   */
+  window.AwkWasm = {
+    isSupported: function () {
+      return typeof WebAssembly !== 'undefined';
+    },
+    isLoaded: function () {
+      return state.wasmAvailable;
+    },
+    load: function () {
+      return new Promise(function (resolve) {
+        var worker = initWorker();
+        if (!worker) {
+          resolve(false);
+          return;
+        }
+        var onProbe = function (ev) {
+          if (ev.data && ev.data.type === 'awk-probe-result') {
+            state.worker.removeEventListener('message', onProbe);
+            resolve(!!ev.data.available);
+          }
+        };
+        state.worker.addEventListener('message', onProbe);
+        worker.postMessage({ type: 'awk-probe' });
+      });
+    },
+    run: function (script, inputText) {
+      return new Promise(function (resolve, reject) {
+        var worker = initWorker();
+        if (!worker) {
+          reject(new Error('Worker unavailable'));
+          return;
+        }
+        var onResult = function (ev) {
+          if (ev.data && ev.data.type === 'awk-result') {
+            state.worker.removeEventListener('message', onResult);
+            resolve(ev.data.result);
+          }
+        };
+        state.worker.addEventListener('message', onResult);
+        worker.postMessage({
+          type: 'run-awk',
+          script: script,
+          inputText: inputText || '',
+        });
+      });
+    },
+  };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

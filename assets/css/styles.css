@@ -864,9 +864,18 @@ textarea:focus-visible,
 }
 
 @media (min-width: 1280px) {
-  .workspace-grid {
+  .workspace-grid--js {
     grid-template-columns: 3fr 1fr;
   }
+
+  .workspace-grid--wasm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.workspace-grid .editor-panel[hidden],
+.workspace-grid .workspace-side-col[hidden] {
+  display: none !important;
 }
 
 .editor-panel {
@@ -1741,6 +1750,198 @@ textarea:focus-visible,
   .editor-footer .btn {
     width: 100%;
   }
+}
+
+/* Engine selector */
+.engine-bar {
+  padding: var(--space-md);
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.engine-bar__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.engine-select {
+  min-width: 220px;
+  flex: 1;
+  max-width: 320px;
+}
+
+.engine-privacy {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--secondary);
+  margin: 0;
+}
+
+.wasm-status {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--on-surface-variant);
+  margin: var(--space-sm) 0 0;
+}
+
+.wasm-status.is-ok {
+  color: var(--secondary);
+}
+
+.wasm-status.is-warn {
+  color: var(--tertiary);
+}
+
+.wasm-status.is-err {
+  color: var(--error);
+}
+
+.wasm-status__link {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.wasm-status__btn {
+  margin-left: var(--space-sm);
+  padding: 2px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(76, 215, 246, 0.1);
+  border: 1px solid rgba(76, 215, 246, 0.35);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.wasm-status__btn:hover {
+  background: rgba(76, 215, 246, 0.18);
+}
+
+.editor-panel--awk {
+  box-shadow: var(--shadow-panel);
+}
+
+.awk-editor-wrap {
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.awk-editor-wrap label {
+  display: block;
+  margin-bottom: var(--space-sm);
+  color: var(--on-surface-variant);
+}
+
+.awk-script-editor {
+  width: 100%;
+  min-height: 200px;
+  padding: var(--space-md);
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--primary);
+  resize: vertical;
+  tab-size: 2;
+  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+.awk-script-editor:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--primary);
+}
+
+.awk-editor-hint {
+  margin: var(--space-sm) 0 0;
+  font-size: 12px;
+  color: var(--on-surface-variant);
+}
+
+.awk-editor-hint code {
+  font-family: var(--font-mono);
+  color: var(--primary);
+  font-size: 11px;
+}
+
+.editor-footer--awk {
+  flex-wrap: wrap;
+}
+
+.example-picker {
+  flex: 1;
+  min-width: 180px;
+}
+
+.example-picker select {
+  width: 100%;
+}
+
+.workspace-side-col .side-heading {
+  margin-bottom: var(--space-sm);
+  color: var(--on-surface-variant);
+}
+
+/* AWK output */
+.results-panel--awk {
+  min-height: 280px;
+  max-height: none;
+}
+
+.awk-stdout-pre {
+  margin: 0;
+  padding: var(--space-md);
+  background: var(--surface-container-lowest);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--on-surface);
+  overflow: auto;
+  max-height: 220px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.awk-stderr-panel {
+  padding: var(--space-md);
+  background: rgba(147, 0, 10, 0.15);
+  border-bottom: 1px solid rgba(255, 180, 171, 0.25);
+}
+
+.awk-stderr-panel h4 {
+  color: var(--error);
+  margin-bottom: var(--space-sm);
+}
+
+.awk-stderr-pre {
+  color: var(--error);
+  max-height: 120px;
+  border: none;
+  padding: 0;
+}
+
+.awk-csv-section {
+  padding: var(--space-md);
+}
+
+.awk-csv-heading {
+  color: var(--on-surface-variant);
+  margin-bottom: var(--space-md);
+}
+
+.table-scroll--awk {
+  max-height: 320px;
+  min-height: 120px;
+  position: relative;
 }
 
 @media (max-width: 767px) {
