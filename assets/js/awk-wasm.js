@@ -1,11 +1,13 @@
 /**
  * AWK WASM loader — runs in main thread or Web Worker.
  *
- * Loading order:
- *   A) Emscripten: assets/wasm/awk.js + awk.wasm (virtual FS, callMain)
- *   B) Raw wasm only: assets/wasm/awk.wasm (no stdin bridge — explicit error)
+ * Build output (Emscripten, MODULARIZE=1):
+ *   assets/wasm/awk.js   → global AwkModule(factory) => Promise<Module>
+ *   assets/wasm/awk.wasm
  *
- * Limitations without a compiled binary: load() fails gracefully; app uses JS parser.
+ * Run: awk -f /script.awk /input.log via Module.FS + Module.callMain
+ *
+ * Rebuild: tools/build-awk-wasm.sh (requires emcc + bison)
  */
 (function (global) {
   'use strict';
@@ -15,6 +17,8 @@
   var lastError = null;
   /** @type {'none'|'emscripten'|'raw'} */
   var mode = 'none';
+  /** @type {object|null} */
+  var emModule = null;
 
   var INPUT_LOG = '/input.log';
   var SCRIPT_AWK = '/script.awk';
@@ -35,10 +39,6 @@
     return mode;
   }
 
-  /**
-   * Base URL for wasm assets (trailing slash).
-   * Worker: .../assets/js/parser.worker.js → .../assets/wasm/
-   */
   function wasmBaseUrl() {
     var href =
       (typeof self !== 'undefined' && self.location && self.location.href) ||
@@ -82,77 +82,86 @@
       });
   }
 
-  function waitRuntimeInitialized(Module) {
-    return new Promise(function (resolve, reject) {
-      if (Module.calledRun || Module.asm) {
-        resolve(Module);
-        return;
-      }
-      var prev = Module.onRuntimeInitialized;
-      Module.onRuntimeInitialized = function () {
-        if (typeof prev === 'function') prev();
-        resolve(Module);
-      };
-      setTimeout(function () {
-        if (Module.asm || Module.FS) resolve(Module);
-        else reject(new Error('WASM runtime initialization timed out'));
-      }, 120000);
-    });
+  function makeCapture() {
+    return { out: '', err: '' };
+  }
+
+  function bindCapture(Module, capture) {
+    Module.capture = capture;
+    Module.print = function (text) {
+      capture.out += text + '\n';
+    };
+    Module.printErr = function (text) {
+      capture.err += text + '\n';
+    };
+  }
+
+  function resetCapture(Module) {
+    if (Module.capture) {
+      Module.capture.out = '';
+      Module.capture.err = '';
+    }
+  }
+
+  function readCapture(Module) {
+    var c = Module.capture || { out: '', err: '' };
+    return { stdout: c.out, stderr: c.err };
   }
 
   /**
-   * Configure Module before Emscripten glue executes (importScripts).
+   * Load Emscripten MODULARIZE build (AwkModule factory).
    */
-  function createPreModule(baseUrl) {
-    var capture = { out: '', err: '' };
-    var Module = {
-      noInitialRun: true,
-      locateFile: function (path) {
-        if (path.indexOf('http') === 0) return path;
-        return baseUrl + path;
-      },
-      print: function (text) {
-        capture.out += text + '\n';
-      },
-      printErr: function (text) {
-        capture.err += text + '\n';
-      },
-      capture: capture,
-    };
-    return Module;
-  }
-
   function loadEmscripten(baseUrl) {
     return fetchExists(baseUrl + 'awk.js').then(function (exists) {
       if (!exists) return false;
-      var Module = createPreModule(baseUrl);
-      global.Module = Module;
-      try {
-        // Relative to assets/js/parser.worker.js
-        importScripts('../wasm/awk.js');
-      } catch (e1) {
-        lastError = 'Failed to load awk.js: ' + (e1.message || e1);
-        return false;
-      }
-      var M = global.Module || Module;
-      global.Module = M;
-      return waitRuntimeInitialized(M)
-        .then(function () {
-          mode = 'emscripten';
-          loaded = true;
-          lastError = null;
-          return true;
+
+      return new Promise(function (resolve) {
+        try {
+          importScripts('../wasm/awk.js');
+        } catch (e) {
+          lastError = 'Failed to load awk.js: ' + (e.message || e);
+          resolve(false);
+          return;
+        }
+
+        var factory = global.AwkModule;
+        if (typeof factory !== 'function') {
+          lastError =
+            'awk.js loaded but AwkModule factory is missing. Rebuild with MODULARIZE=1 and EXPORT_NAME=AwkModule.';
+          resolve(false);
+          return;
+        }
+
+        var capture = makeCapture();
+        factory({
+          locateFile: function (path) {
+            if (path.indexOf('http') === 0) return path;
+            return baseUrl + path;
+          },
+          noInitialRun: true,
+          print: function (text) {
+            capture.out += text + '\n';
+          },
+          printErr: function (text) {
+            capture.err += text + '\n';
+          },
         })
-        .catch(function (err) {
-          lastError = err.message || String(err);
-          return false;
-        });
+          .then(function (Module) {
+            emModule = Module;
+            bindCapture(emModule, capture);
+            mode = 'emscripten';
+            loaded = true;
+            lastError = null;
+            resolve(true);
+          })
+          .catch(function (err) {
+            lastError = err.message || String(err);
+            resolve(false);
+          });
+      });
     });
   }
 
-  /**
-   * Path B: raw .wasm only — instantiate but no I/O bridge.
-   */
   function loadRawWasm(baseUrl) {
     return fetchExists(baseUrl + 'awk.wasm').then(function (exists) {
       if (!exists) return false;
@@ -198,7 +207,7 @@
       .then(function (ok) {
         if (!ok && !lastError) {
           lastError =
-            'AWK WASM files not found. Add assets/wasm/awk.js and awk.wasm (see assets/wasm/README.md).';
+            'AWK WASM files not found. Run tools/build-awk-wasm.sh (see assets/wasm/README.md).';
         }
         loading = null;
         return ok;
@@ -212,40 +221,13 @@
     return loading;
   }
 
-  function resetCapture(Module) {
-    if (Module.capture) {
-      Module.capture.out = '';
-      Module.capture.err = '';
-    }
-  }
-
-  function readCapture(Module) {
-    var out = '';
-    var err = '';
-    if (Module.capture) {
-      out = Module.capture.out;
-      err = Module.capture.err;
-    }
-    return { stdout: out, stderr: err };
-  }
-
-  /**
-   * Run AWK via Emscripten FS + callMain.
-   * Expects build to expose awk as main with -f /script.awk /input.log
-   */
   function runEmscripten(script, inputText) {
-    var Module = global.Module;
+    var Module = emModule;
     if (!Module || !Module.FS) {
       return failResult('Emscripten module missing FS API. Rebuild with FORCE_FILESYSTEM=1.', 1);
     }
 
     resetCapture(Module);
-    Module.print = function (text) {
-      Module.capture.out += text + '\n';
-    };
-    Module.printErr = function (text) {
-      Module.capture.err += text + '\n';
-    };
 
     try {
       try {
@@ -269,14 +251,9 @@
         } catch (e) {
           exitCode = Module.callMain(args) | 0;
         }
-      } else if (typeof Module._main === 'function') {
-        return failResult(
-          'awk.wasm loaded but Module.callMain is missing. Export callMain in your Emscripten build.',
-          1
-        );
       } else {
         return failResult(
-          'Emscripten AWK module has no callMain or awkRunScript hook. See assets/wasm/README.md.',
+          'awk.wasm loaded but Module.callMain is missing. Rebuild with EXPORTED_RUNTIME_METHODS including callMain.',
           1
         );
       }

@@ -321,22 +321,10 @@
         <h1>Presets &amp; Documentation</h1>
         <div class="docs-notice">
           <strong>Engines:</strong> The <em>JavaScript parser</em> handles combined Apache/Nginx logs without WASM.
-          The <em>AWK WASM engine</em> runs real AWK scripts in a Web Worker when you provide compiled
-          <code>assets/wasm/awk.js</code> and <code>awk.wasm</code> (see below).
+          The <em>AWK WASM engine</em> runs One True Awk in a Web Worker via
+          <code>assets/wasm/awk.js</code> and <code>awk.wasm</code>.
         </div>
       </div>
-      <section class="docs-wasm-build section-inner" style="max-width:80rem;margin:0 auto var(--space-xl);padding:0 var(--margin-mobile)">
-        <h2 class="label-caps" style="color:var(--primary);margin-bottom:var(--space-md)">Building AWK WASM (Emscripten)</h2>
-        <div class="preset-doc-card">
-          <p>To enable the AWK WASM engine, compile an AWK implementation such as <strong>One True Awk</strong>, <strong>mawk</strong>, or <strong>BusyBox awk</strong> with Emscripten and copy the output here:</p>
-          <pre>assets/wasm/awk.js
-assets/wasm/awk.wasm</pre>
-          <p style="margin-top:var(--space-md)">The app expects an Emscripten-style module with a virtual filesystem so it can write <code>/input.log</code>, <code>/script.awk</code>, and run:</p>
-          <pre>awk -f /script.awk /input.log</pre>
-          <p style="margin-top:var(--space-md)">Suggested flags include <code>-s FORCE_FILESYSTEM=1</code>, <code>-s EXPORTED_RUNTIME_METHODS=['FS','callMain']</code>, and <code>-s NO_EXIT_RUNTIME=1</code>. Full notes: <code>assets/wasm/README.md</code>.</p>
-          <p style="margin-top:var(--space-md);color:var(--on-surface-variant)">If WASM files are missing, the UI falls back to the JavaScript parser and shows a clear status message.</p>
-        </div>
-      </section>
       <div class="preset-docs-grid" id="preset-docs-grid"></div>
     </section>
   </main>

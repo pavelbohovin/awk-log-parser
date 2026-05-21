@@ -1,3 +1,7 @@
 .DS_Store
 Thumbs.db
 *.log.bak
+
+# WASM build toolchain (not committed; see assets/wasm/README.md)
+tools/emsdk/
+tools/vendor/

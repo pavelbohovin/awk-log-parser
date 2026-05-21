@@ -181,11 +181,10 @@
       el.classList.add('is-warn');
       var msg =
         state.wasmError ||
-        'AWK WASM not loaded. Deploy assets/wasm/awk.js and awk.wasm (Emscripten build).';
+        'AWK WASM not loaded. Ensure assets/wasm/awk.js and awk.wasm are deployed (see assets/wasm/README.md).';
       el.innerHTML =
         escapeHtml(msg) +
-        ' <a href="#/docs" class="wasm-status__link">Build instructions</a> · ' +
-        '<button type="button" class="wasm-status__btn" id="use-js-parser-btn">Use JavaScript Parser</button>';
+        ' <button type="button" class="wasm-status__btn" id="use-js-parser-btn">Use JavaScript Parser</button>';
       var useJs = $('use-js-parser-btn');
       if (useJs && !useJs.dataset.bound) {
         useJs.dataset.bound = '1';
@@ -248,7 +247,7 @@
       runAwk.disabled =
         !hasLog || state.awkRunning || state.engine !== 'wasm' || !state.wasmAvailable;
       runAwk.title = !state.wasmAvailable
-        ? 'Add assets/wasm/awk.js and awk.wasm to enable AWK (see Docs)'
+        ? 'Deploy assets/wasm/awk.js and awk.wasm (see assets/wasm/README.md)'
         : '';
     }
   }
