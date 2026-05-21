@@ -46,4 +46,4 @@ Log files are read with the File API and never sent to a server. AWK execution (
 
 ## License
 
-See repository for license terms.
+This project is licensed under the [MIT License](LICENSE).
