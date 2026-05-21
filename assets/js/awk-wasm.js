@@ -105,7 +105,11 @@
 
   function readCapture(Module) {
     var c = Module.capture || { out: '', err: '' };
-    return { stdout: c.out, stderr: c.err };
+    var stderr = c.err.replace(
+      /\n?program exited \(with status:[^\n]*\n?/g,
+      '\n'
+    );
+    return { stdout: c.out, stderr: stderr.trim() };
   }
 
   /**
@@ -134,6 +138,7 @@
 
         var capture = makeCapture();
         factory({
+          thisProgram: 'awk',
           locateFile: function (path) {
             if (path.indexOf('http') === 0) return path;
             return baseUrl + path;
@@ -246,11 +251,8 @@
       if (typeof Module.awkRunScript === 'function') {
         exitCode = Module.awkRunScript(SCRIPT_AWK, INPUT_LOG) | 0;
       } else if (typeof Module.callMain === 'function') {
-        try {
-          exitCode = Module.callMain(['awk'].concat(args)) | 0;
-        } catch (e) {
-          exitCode = Module.callMain(args) | 0;
-        }
+        // callMain prepends argv[0] (thisProgram); do not add a second program name.
+        exitCode = Module.callMain(args) | 0;
       } else {
         return failResult(
           'awk.wasm loaded but Module.callMain is missing. Rebuild with EXPORTED_RUNTIME_METHODS including callMain.',
