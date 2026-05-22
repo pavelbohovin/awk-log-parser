@@ -67,13 +67,7 @@ body {
 }
 
 body.workspace-layout {
-  overflow: hidden;
-}
-
-@media (max-width: 1023px) {
-  body.workspace-layout {
-    overflow: auto;
-  }
+  overflow-x: hidden;
 }
 
 h1, h2, h3, h4, p, ul {
@@ -708,7 +702,7 @@ textarea:focus-visible,
 /* Workspace layout */
 .workspace-shell {
   display: flex;
-  height: calc(100vh - var(--header-h));
+  min-height: calc(100vh - var(--header-h));
 }
 
 .workspace-sidebar {
@@ -763,7 +757,6 @@ textarea:focus-visible,
 
 .workspace-content {
   flex: 1;
-  overflow-y: auto;
   padding: var(--space-lg);
   background: var(--background);
 }
