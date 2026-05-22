@@ -632,31 +632,24 @@ textarea:focus-visible,
   max-width: 420px;
   border-radius: var(--radius-xl);
   border: 1px solid var(--outline-variant);
-  background: linear-gradient(135deg, var(--surface-container-high), var(--surface-container-lowest));
+  background: var(--surface-container-lowest);
   position: relative;
   overflow: hidden;
+}
+
+.privacy-visual img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 .privacy-visual::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, var(--background), transparent);
-  opacity: 0.4;
-}
-
-.privacy-visual-inner {
-  position: absolute;
-  inset: 20%;
-  border: 1px dashed var(--outline-variant);
-  border-radius: var(--radius);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--primary);
-  letter-spacing: 0.1em;
+  background: linear-gradient(to top, rgba(8, 17, 31, 0.45), rgba(8, 17, 31, 0.05));
+  pointer-events: none;
 }
 
 .cta-band {
