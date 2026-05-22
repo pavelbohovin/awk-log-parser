@@ -1298,9 +1298,11 @@ textarea:focus-visible,
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: var(--space-xl) var(--space-lg);
-  gap: var(--space-sm);
+  padding: calc(var(--space-xl) + var(--space-sm)) var(--space-lg);
+  gap: var(--space-md);
   min-height: 280px;
+  max-width: 42rem;
+  margin-inline: auto;
 }
 
 .empty-panel.is-hidden {
@@ -1324,24 +1326,30 @@ textarea:focus-visible,
   font-size: 1.5rem;
   font-family: var(--font-mono);
   color: var(--primary);
-  background: rgba(76, 215, 246, 0.08);
-  border: 1px solid rgba(76, 215, 246, 0.2);
+  background: rgba(76, 215, 246, 0.1);
+  border: 1px solid rgba(76, 215, 246, 0.28);
   border-radius: var(--radius-xl);
   margin-bottom: var(--space-sm);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 10px 30px -18px rgba(76, 215, 246, 0.85);
 }
 
 .empty-panel h4 {
   font-size: 18px;
   font-weight: 600;
   color: var(--on-surface);
+  line-height: 1.3;
 }
 
 .empty-panel p {
   font-size: 14px;
   color: var(--on-surface-variant);
-  max-width: 28rem;
-  line-height: 1.5;
-  margin-bottom: var(--space-sm);
+  max-width: 32rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.empty-panel .btn {
+  margin-top: var(--space-sm);
 }
 
 .loading-overlay {
