@@ -11,7 +11,7 @@ No backend. No uploads. No tracking by the app itself.
 
 ## Screenshot
 
-![AWK Log Parser — home screen](docs/screenshot.png)
+![AWK Log Parser — home screen](assets/img/screenshot.png)
 
 ## Why Use It?
 
@@ -107,12 +107,13 @@ The JavaScript parser targets combined Apache/Nginx access log lines. Custom AWK
 │   │   ├── parser.worker.js
 │   │   ├── presets.js
 │   │   └── sample-log.js
+│   ├── img/
+│   │   ├── screenshot.png
+│   │   └── servers.png
 │   └── wasm/
 │       ├── awk.js
 │       ├── awk.wasm
 │       └── README.md
-├── docs/
-│   └── screenshot.png
 ├── sample-access.log
 ├── test-data/
 │   └── sample-access.log

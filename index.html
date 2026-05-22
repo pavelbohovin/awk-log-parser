@@ -5,17 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Parse Apache and Nginx access logs locally in your browser. No uploads, no tracking.">
   <title>AWK Log Parser</title>
+  <base href="/">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
   <header class="site-header" role="banner">
-    <a href="#/" class="logo" aria-label="AWK Log Parser home">AWK_LOG_PARSER</a>
+    <a href="/" class="logo" aria-label="AWK Log Parser home" data-route="/">AWK_LOG_PARSER</a>
     <nav class="site-nav" aria-label="Main">
-      <a href="#/" class="nav-link" data-route="/">Home</a>
-      <a href="#/workspace" class="nav-link" data-route="/workspace">Workspace</a>
-      <a href="#/analytics" class="nav-link" data-route="/analytics">Analysis</a>
-      <a href="#/docs" class="nav-link" data-route="/docs">Docs</a>
+      <a href="/" class="nav-link" data-route="/">Home</a>
+      <a href="/workspace" class="nav-link" data-route="/workspace">Workspace</a>
+      <a href="/analytics" class="nav-link" data-route="/analytics">Analysis</a>
+      <a href="/docs" class="nav-link" data-route="/docs">Docs</a>
     </nav>
     <div class="header-actions">
       <button type="button" class="icon-btn menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu">
@@ -25,10 +26,10 @@
   </header>
 
   <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile">
-    <a href="#/" class="nav-link" data-route="/">Home</a>
-    <a href="#/workspace" class="nav-link" data-route="/workspace">Workspace</a>
-    <a href="#/analytics" class="nav-link" data-route="/analytics">Analysis</a>
-    <a href="#/docs" class="nav-link" data-route="/docs">Docs</a>
+    <a href="/" class="nav-link" data-route="/">Home</a>
+    <a href="/workspace" class="nav-link" data-route="/workspace">Workspace</a>
+    <a href="/analytics" class="nav-link" data-route="/analytics">Analysis</a>
+    <a href="/docs" class="nav-link" data-route="/docs">Docs</a>
   </nav>
 
   <main class="app-main" id="app-main">
@@ -109,7 +110,7 @@
           <h2>Ready to demystify your logs?</h2>
           <div class="cta-actions">
             <button type="button" class="btn btn-primary" data-go-workspace>Open Workspace</button>
-            <a href="#/docs" class="btn btn-secondary">Read Documentation</a>
+            <a href="/docs" class="btn btn-secondary" data-route="/docs">Read Documentation</a>
           </div>
         </div>
       </section>
@@ -311,7 +312,7 @@
           <div class="empty-panel__icon" aria-hidden="true">▤</div>
           <h4>No analytics yet</h4>
           <p>Parse a log in the Workspace to generate top IPs, URLs, status distribution, and more.</p>
-          <a href="#/workspace" class="btn btn-primary">Open Workspace</a>
+          <a href="/workspace" class="btn btn-primary" data-route="/workspace">Open Workspace</a>
         </div>
       </div>
     </section>
@@ -340,8 +341,8 @@
         <span class="label-caps" style="color:var(--outline);display:block;margin-bottom:var(--space-md);">Project</span>
         <ul class="privacy-list" style="color:var(--on-surface-variant);font-family:var(--font-sans);font-size:14px;">
           <li><a href="https://github.com/pavelbohovin/awk-log-parser" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-          <li><a href="#/docs">Presets</a></li>
-          <li><a href="#/workspace">Workspace</a></li>
+          <li><a href="/docs" data-route="/docs">Presets</a></li>
+          <li><a href="/workspace" data-route="/workspace">Workspace</a></li>
         </ul>
       </div>
     </div>
@@ -354,6 +355,6 @@
   <script src="assets/js/presets.js"></script>
   <script src="assets/js/awk-examples.js"></script>
   <script src="assets/js/sample-log.js"></script>
-  <script src="assets/js/app.js"></script>
+  <script src="assets/js/app.js?v=clean-urls"></script>
 </body>
 </html>

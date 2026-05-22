@@ -1,5 +1,5 @@
 /**
- * AWK Log Parser — SPA shell, hash routing, Web Worker orchestration.
+ * AWK Log Parser — SPA shell, History API routing, Web Worker orchestration.
  */
 (function () {
   'use strict';
@@ -45,8 +45,8 @@
       .replace(/"/g, '&quot;');
   }
 
-  function formatRoute(hash) {
-    var path = (hash || '#/').replace(/^#/, '') || '/';
+  function formatRoute(path) {
+    path = path || '/';
     if (path.charAt(0) !== '/') path = '/' + path;
     var q = path.indexOf('?');
     if (q !== -1) path = path.slice(0, q);
@@ -55,13 +55,13 @@
   }
 
   function navigate(path, replace) {
-    var target = '#/' + (path === '/' ? '' : path.replace(/^\//, ''));
+    var target = formatRoute(path);
     if (replace) {
-      if (location.hash !== target) history.replaceState(null, '', target);
-    } else if (location.hash !== target) {
-      location.hash = target;
+      if (location.pathname !== target) history.replaceState(null, '', target);
+    } else if (location.pathname !== target) {
+      history.pushState(null, '', target);
     }
-    renderRoute(formatRoute(target));
+    renderRoute(target);
   }
 
   function renderRoute(path) {
@@ -693,7 +693,7 @@
   function renderAnalyticsData(analytics) {
     if (!analytics) return;
     state._analyticsCache = analytics;
-    if (formatRoute(location.hash) === 'analytics') renderAnalytics();
+    if (formatRoute(location.pathname) === '/analytics') renderAnalytics();
   }
 
   function renderAnalytics() {
@@ -850,8 +850,17 @@
   }
 
   function bindEvents() {
-    window.addEventListener('hashchange', function () {
-      renderRoute(formatRoute(location.hash));
+    window.addEventListener('popstate', function () {
+      renderRoute(formatRoute(location.pathname));
+    });
+
+    document.querySelectorAll('[data-route]').forEach(function (link) {
+      link.addEventListener('click', function (e) {
+        var path = link.getAttribute('data-route');
+        if (!path) return;
+        e.preventDefault();
+        navigate(path);
+      });
     });
 
     document.querySelectorAll('[data-go-workspace]').forEach(function (btn) {
@@ -986,10 +995,10 @@
     var editor = $('awk-script-editor');
     if (editor) editor.value = DEFAULT_AWK_SCRIPT;
     bindEvents();
-    if (!location.hash || location.hash === '#') {
-      navigate('/', true);
+    if (location.hash && location.hash.indexOf('#/') === 0) {
+      navigate(location.hash.slice(1), true);
     } else {
-      renderRoute(formatRoute(location.hash));
+      renderRoute(formatRoute(location.pathname));
     }
     setEngine('js');
     enableExport(false);
